@@ -16,22 +16,39 @@ class BookCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
-            child: book.imageUrl != null
-                ? Image.network(book.imageUrl!, fit: BoxFit.cover)
-                : const Icon(Icons.book, size: 50),
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              child: book.imageUrl != null
+                  ? Image.network(book.imageUrl!, fit: BoxFit.cover)
+                  : const Icon(Icons.book, size: 50),
+            ),
           ),
           ListTile(
-            title: Text(book.title, maxLines: 2),
-            subtitle: Text(book.author),
+            title: Text(
+              book.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text(
+              book.author,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             trailing: IconButton(
               icon: Icon(
                 isFavorite ? Icons.favorite : Icons.favorite_border,
-                color: isFavorite ? Colors.red : null,
+                color: isFavorite ? Colors.red : Colors.grey,
               ),
               onPressed: onToggleFavorite,
+              splashRadius: 24,
+              tooltip: isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris',
             ),
           ),
         ],
