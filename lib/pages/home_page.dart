@@ -1,59 +1,25 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
-import '../models/book.dart';
+import 'package:provider/provider.dart';
+import '../providers/books_provider.dart';
 import '../widgets/book_card.dart';
-import 'favorites_page.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
-
-  @override
-  _HomePageState createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  final ApiService _apiService = ApiService();
+class HomePage extends StatelessWidget {
   final TextEditingController _searchController = TextEditingController();
-  List<Book> _books = [];
-  bool _isLoading = false;
-  String _errorMessage = '';
-
-  Future<void> _searchBooks() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = '';
-    });
-
-    try {
-      final books = await _apiService.searchBooks(_searchController.text);
-      setState(() {
-        _books = books;
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Erreur lors de la recherche: ${e.toString()}';
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
+    final booksProvider = Provider.of<BooksProvider>(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Recherche de livres'),
         actions: [
           IconButton(
             icon: const Icon(Icons.favorite),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const FavoritesPage()),
-              );
-            },
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const FavoritesPage()),
+            ),
           ),
         ],
       ),
@@ -61,52 +27,36 @@ class _HomePageState extends State<HomePage> {
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: const InputDecoration(
-                      labelText: 'Rechercher un livre',
-                      border: OutlineInputBorder(),
-                    ),
-                    onSubmitted: (_) => _searchBooks(),
-                  ),
-                ),
-                IconButton(
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                labelText: 'Rechercher',
+                suffixIcon: IconButton(
                   icon: const Icon(Icons.search),
-                  onPressed: _searchBooks,
+                  onPressed: () => booksProvider.searchBooks(_searchController.text),
                 ),
-              ],
-            ),
-          ),
-          if (_isLoading)
-            const Center(child: CircularProgressIndicator())
-          else if (_errorMessage.isNotEmpty)
-            Center(child: Text(_errorMessage))
-          else
-            Expanded(
-              child: GridView.builder(
-                padding: const EdgeInsets.all(8.0),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 0.7,
-                  crossAxisSpacing: 8.0,
-                  mainAxisSpacing: 8.0,
-                ),
-                itemCount: _books.length,
-                itemBuilder: (context, index) {
-                  final book = _books[index];
-                  return BookCard(
-                    book: book,
-                    isFavorite: false, // À remplacer par une vérification réelle
-                    onToggleFavorite: () {
-                      // Implémenter l'ajout aux favoris
-                    },
-                  );
-                },
               ),
             ),
+          ),
+          Expanded(
+            child: Consumer<BooksProvider>(
+              builder: (context, provider, _) {
+                if (provider.isLoading) return const Center(child: CircularProgressIndicator());
+                if (provider.error.isNotEmpty) return Text(provider.error);
+                return GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 0.7,
+                  ),
+                  itemCount: provider.searchResults.length,
+                  itemBuilder: (ctx, index) => BookCard(
+                    book: provider.searchResults[index],
+                    isFavorite: provider.isFavorite(provider.searchResults[index].id),
+                  ),
+                );
+              },
+            ),
+          ),
         ],
       ),
     );

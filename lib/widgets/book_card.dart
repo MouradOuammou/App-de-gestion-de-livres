@@ -1,62 +1,50 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../models/book.dart';
+import '../services/api_service.dart';
+import '../services/db_service.dart';
 
-class BookCard extends StatelessWidget {
-  final Book book;
-  final bool isFavorite;
-  final VoidCallback onToggleFavorite;
+class BooksProvider with ChangeNotifier {
+  final ApiService _apiService = ApiService();
+  final DatabaseService _dbService = DatabaseService();
 
-  const BookCard({
-    required this.book,
-    required this.isFavorite,
-    required this.onToggleFavorite,
-    Key? key,
-  }) : super(key: key);
+  List<Book> _searchResults = [];
+  List<Book> _favorites = [];
+  bool _isLoading = false;
+  String _error = '';
 
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 4,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: book.imageUrl != null
-                ? Image.network(
-              book.imageUrl!,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) =>
-              const Icon(Icons.broken_image),
-            )
-                : const Center(child: Icon(Icons.book)),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  book.title,
-                  style: Theme.of(context).textTheme.titleMedium,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  book.author,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: Icon(
-              isFavorite ? Icons.favorite : Icons.favorite_border,
-              color: isFavorite ? Colors.red : null,
-            ),
-            onPressed: onToggleFavorite,
-          ),
-        ],
-      ),
-    );
+  List<Book> get searchResults => _searchResults;
+  List<Book> get favorites => _favorites;
+  bool get isLoading => _isLoading;
+  String get error => _error;
+
+  bool isFavorite(String bookId) => _favorites.any((b) => b.id == bookId);
+
+  Future<void> searchBooks(String query) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      _searchResults = await _apiService.searchBooks(query);
+      _error = '';
+    } catch (e) {
+      _error = 'Erreur: ${e.toString()}';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadFavorites() async {
+    _favorites = await _dbService.getBooks();
+    notifyListeners();
+  }
+
+  Future<void> toggleFavorite(Book book) async {
+    if (isFavorite(book.id)) {
+      await _dbService.deleteBook(book.id);
+    } else {
+      await _dbService.insertBook(book);
+    }
+    await loadFavorites();
   }
 }

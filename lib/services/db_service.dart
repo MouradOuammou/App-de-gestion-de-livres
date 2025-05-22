@@ -8,14 +8,12 @@ class DatabaseService {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-
     _database = await _initDatabase();
     return _database!;
   }
 
   Future<Database> _initDatabase() async {
     final path = join(await getDatabasesPath(), 'books_database.db');
-
     return await openDatabase(
       path,
       version: 1,
@@ -44,10 +42,7 @@ class DatabaseService {
   Future<List<Book>> getBooks() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(_tableName);
-
-    return List.generate(maps.length, (i) {
-      return Book.fromMap(maps[i]);
-    });
+    return List.generate(maps.length, (i) => Book.fromMap(maps[i]));
   }
 
   Future<void> deleteBook(String id) async {
@@ -57,10 +52,5 @@ class DatabaseService {
       where: 'id = ?',
       whereArgs: [id],
     );
-  }
-
-  Future<void> close() async {
-    final db = await database;
-    await db.close();
   }
 }
