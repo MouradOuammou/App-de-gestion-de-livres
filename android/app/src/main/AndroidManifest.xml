@@ -1,8 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="ouammou.livre.gestiondeslivres">
-   <application
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
         android:label="gestiondeslivres"
-        android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
