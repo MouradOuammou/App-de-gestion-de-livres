@@ -22,7 +22,6 @@ class BooksProvider with ChangeNotifier {
   Future<void> searchBooks(String query) async {
     _isLoading = true;
     notifyListeners();
-
     try {
       _searchResults = await _apiService.searchBooks(query);
       _error = '';
@@ -46,5 +45,10 @@ class BooksProvider with ChangeNotifier {
       await _dbService.insertBook(book);
     }
     await loadFavorites();
+  }
+
+  void clearSearch() {
+    _searchResults = [];
+    notifyListeners();
   }
 }
