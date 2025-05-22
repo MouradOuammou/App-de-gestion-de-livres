@@ -1,4 +1,4 @@
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:path/path.dart';
 import '../models/book.dart';
 
@@ -8,25 +8,31 @@ class DatabaseService {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
+
+      sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+
     _database = await _initDatabase();
     return _database!;
   }
 
   Future<Database> _initDatabase() async {
-    final path = join(await getDatabasesPath(), 'books_database.db');
-    return await openDatabase(
+    final path = join(await databaseFactory.getDatabasesPath(), 'books_database.db');
+    return await databaseFactory.openDatabase(
       path,
-      version: 1,
-      onCreate: (db, version) async {
-        await db.execute('''
-          CREATE TABLE $_tableName (
-            id TEXT PRIMARY KEY,
-            title TEXT,
-            author TEXT,
-            imageUrl TEXT
-          )
-        ''');
-      },
+      options: OpenDatabaseOptions(
+        version: 1,
+        onCreate: (db, version) async {
+          await db.execute('''
+            CREATE TABLE $_tableName (
+              id TEXT PRIMARY KEY,
+              title TEXT,
+              author TEXT,
+              imageUrl TEXT
+            )
+          ''');
+        },
+      ),
     );
   }
 
